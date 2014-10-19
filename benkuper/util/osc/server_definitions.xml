@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<data>
+	<server type="master" description="Master" port="10000" />
+	<server type="artisanum" description="Artisanum" port="15000" />
+	<server type="remoteUI" description="Remote UI" port="18000" />
+</data>

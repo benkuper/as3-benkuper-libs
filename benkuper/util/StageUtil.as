@@ -59,6 +59,25 @@ package benkuper.util
 				stage.nativeWindow.height = targetScreen.bounds.height;
 			}
 		}
+		
+		public static function setScreenRelative(screenID:int,top:Number,left:Number,width:Number,height:Number):void
+		{
+			if (stage == null)
+			{
+				trace("3: Must StageUtil.init() first !");
+				return;
+			}
+			
+			var targetScreen:Screen = Screen.screens[Math.min(screenID, Screen.screens.length - 1)];
+			
+			stage.nativeWindow.x = targetScreen.bounds.x+left*targetScreen.bounds.width;
+			stage.nativeWindow.y = targetScreen.bounds.y + top * targetScreen.bounds.height;
+			stage.nativeWindow.width = width*targetScreen.bounds.width;
+			stage.nativeWindow.height = height*targetScreen.bounds.height;
+			
+			
+		}
+		
 	}
 
 }
