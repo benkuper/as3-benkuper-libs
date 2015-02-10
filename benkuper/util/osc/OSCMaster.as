@@ -11,7 +11,7 @@ package benkuper.util.osc
 	import org.tuio.osc.IOSCListener;
 	import org.tuio.osc.OSCManager;
 	import org.tuio.osc.OSCMessage;
-	import ui.Toaster;
+	//import ui.Toaster;
 	
 	/**
 	 * ...
@@ -20,8 +20,11 @@ package benkuper.util.osc
 	public class OSCMaster implements IOSCListener
 	{
 		public static var instance:OSCMaster;
+		public var oscManagers:Vector.<OSCManager>;
 		public var oscM:OSCManager;
 		public var port:int;
+		
+		private var verbose:Boolean = true;
 		
 		public var registeredObjects:Array;
 		
@@ -30,7 +33,30 @@ package benkuper.util.osc
 			this.port = port;
 			registeredObjects = new Array();
 			
-			oscM = new OSCManager(new UDPConnector("127.0.0.1", port), new UDPConnector("0.0.0.0", 10000, false, false)); //0.0.0.0 = all interfaces
+			oscManagers = new Vector.<OSCManager>();
+			
+			//var interfaces:Vector.<NetworkInterface> = NetworkInfo.networkInfo.findInterfaces();
+			
+			//for each(var i:NetworkInterface in interfaces)
+			//{
+				//for each(var a:InterfaceAddress in i.addresses)
+				//{
+					//if (a.ipVersion == IPVersion.IPV4 && a.address != "127.0.0.1") 
+					//{
+						//try
+						//{
+							//var om:OSCManager = new OSCManager(new UDPConnector(a.address, port), null);
+							//om.addMsgListener(this);
+							//oscManagers.push(om);
+						//}catch (e:Error)
+						//{
+							//trace("Error bind ip :" +a.address);
+						//}
+					//}
+				//}
+			//}
+			
+			oscM = new OSCManager(new UDPConnector("0.0.0.0", port), new UDPConnector("0.0.0.0", 10000, false, false)); //0.0.0.0 = all interfaces
 			oscM.addMsgListener(this);
 			
 		}
@@ -70,12 +96,12 @@ package benkuper.util.osc
 			return null;
 		}
 		
-		public static function sendTo(msg:OSCMessage, host:String, port:int, verbose:Boolean = false):void
+		public static function sendTo(msg:OSCMessage, host:String, port:int):void
 		{
-			if (verbose)
+			if (instance.verbose)
 			{
-				Toaster.info("send OSC :" + msg.address + " " + msg.argumentsToString());
-				trace("send OSC :", host, port, msg.address, msg.argumentsToString());
+				//Toaster.info("send OSC :" + msg.address + " " + msg.argumentsToString());
+				//trace("send OSC :", host, port, msg.address, msg.argumentsToString());
 			}
 			
 			try
@@ -83,7 +109,7 @@ package benkuper.util.osc
 				instance.oscM.sendOSCPacketTo(msg, host, port);
 			} catch (err:Error)
 			{
-				Toaster.error("[OSCMaster] L'osc est mal configuré, impossible d'envoyer !");
+				//Toaster.error("[OSCMaster] L'osc est mal configuré, impossible d'envoyer !");
 			}
 		}
 		
@@ -100,6 +126,27 @@ package benkuper.util.osc
 			}
 		}
 		
+		public static function broadcastFullFlood(msg:OSCMessage,port:int):void
+		{
+			var interfaces:Vector.<NetworkInterface> = NetworkInfo.networkInfo.findInterfaces();
+			
+			for each(var i:NetworkInterface in interfaces)
+			{
+				for each(var a:InterfaceAddress in i.addresses)
+				{
+					if (a.ipVersion == IPVersion.IPV4 && a.address != "127.0.0.1" && a.address.split(".")[0] != "169") 
+					{
+						var addSplit:Array = a.address.split(".");
+						addSplit.pop()
+						var baseAddress:String = addSplit.join(".");
+						for (var g:int = 1; g < 255; g++)
+						{
+							sendTo(msg, baseAddress+"."+g, port);
+						}
+					}
+				}
+			}
+		}
 		
 		/* INTERFACE org.tuio.osc.IOSCListener */
 		public function acceptOSCMessage(msg:OSCMessage):void 
@@ -108,7 +155,12 @@ package benkuper.util.osc
 			
 			for each(var o:Object in registeredObjects)
 			{
-				if (o.address == checkAddress) (o.listener as IOSCListener).acceptOSCMessage(msg);
+				
+				if (o.address == checkAddress) 
+				{
+					
+					(o.listener as IOSCListener).acceptOSCMessage(msg);
+				}
 			}
 		}
 		
